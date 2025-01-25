@@ -102,6 +102,54 @@ def detect(notify_q, record_q):
     cap.release()
     cv2.destroyAllWindows()
     
+def detect_frame(notify_q, record_q, frame):
+    path = 'detectionmodel'
+    detect_weapon = tf.saved_model.load(path)
+
+    if not recording:
+        with open('status.json') as f:
+            data = json.load(f)
+        
+        if data['confirmed'] == True:
+            record_q.put("active event confirmed: recording started")
+            recording = True
+            
+        
+    image_data = cv2.resize(frame, (608, 608))
+    image_data = image_data / 255.
+    image_data = image_data[np.newaxis, ...].astype(np.float32)
+
+    infer_weapon = detect_weapon.signatures['serving_default']
+
+    batch_data = tf.constant(image_data)
+    pred_bbox = infer_weapon(batch_data)
+
+    for key, value in pred_bbox.items():
+        boxes = value[:, :, 0:4]
+        pred_conf = value[:, :, 4:]
+
+    boxes, scores, classes, valid_detections = tf.image.combined_non_max_suppression(
+        boxes=tf.reshape(boxes, (tf.shape(boxes)[0], -1, 1, 4)),
+        scores=tf.reshape(
+            pred_conf, (tf.shape(pred_conf)[0], -1, tf.shape(pred_conf)[-1])),
+        max_output_size_per_class=50,
+        max_total_size=50,
+        iou_threshold=0.5,
+        score_threshold=0.3
+    )
+    valid_detections = valid_detections.numpy()[0]
+        
+    if valid_detections:
+        original_h, original_w, _ = frame.shape
+        bboxes = utils.format_boxes(boxes.numpy()[0][:valid_detections], original_h, original_w)
+
+        notify_q.put(bboxes)
+        
+        pred_bbox = [bboxes, scores.numpy()[0], classes.numpy()[0], valid_detections]
+        
+        frame = utils.draw_bbox(frame, pred_bbox, info=False)
+    return frame
+
 if __name__ == "__main__":        
     dic = {'detected': False,
            'confirmed': False}
