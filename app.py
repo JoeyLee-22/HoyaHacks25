@@ -1,13 +1,10 @@
 import streamlit as st
 import cv2
 import numpy as np
-import av
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 import tensorflow as tf
 from detect import detect_frame, detect, notify, record
 import multiprocessing
 import json
-import time 
 
 st.title("Watcher of Weapons")
 
@@ -16,6 +13,8 @@ option = st.sidebar.selectbox(
     ("Upload file", "Webcam", "RTSP")
 )
 
+path = 'detectionmodel'
+model = tf.saved_model.load(path)
 
 if option == "Upload file":
     uploaded_file = st.file_uploader("Choose a video...", type=["mp4", "mpeg"])
@@ -69,7 +68,7 @@ if option == "Webcam":
         record_p = multiprocessing.Process(target=record, args=(record_q,))
         record_p.start()
         
-        annotated_frame = detect_frame(cv2_img, notify_q, record_q)
+        annotated_frame = detect_frame(model, cv2_img, notify_q, record_q)
         st.image(annotated_frame)
         
         notify_q.close()

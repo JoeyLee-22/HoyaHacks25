@@ -102,10 +102,7 @@ def detect(notify_q, record_q):
     cap.release()
     cv2.destroyAllWindows()
     
-def detect_frame(notify_q, record_q, frame):
-    path = 'detectionmodel'
-    detect_weapon = tf.saved_model.load(path)
-
+def detect_frame(model, notify_q, record_q, frame):
     if not recording:
         with open('status.json') as f:
             data = json.load(f)
@@ -119,7 +116,7 @@ def detect_frame(notify_q, record_q, frame):
     image_data = image_data / 255.
     image_data = image_data[np.newaxis, ...].astype(np.float32)
 
-    infer_weapon = detect_weapon.signatures['serving_default']
+    infer_weapon = model.signatures['serving_default']
 
     batch_data = tf.constant(image_data)
     pred_bbox = infer_weapon(batch_data)
