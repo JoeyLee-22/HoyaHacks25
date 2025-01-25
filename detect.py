@@ -102,16 +102,16 @@ def detect(notify_q, record_q):
     cap.release()
     cv2.destroyAllWindows()
     
-def detect_frame(model, notify_q, record_q, frame):
-    if not recording:
-        with open('status.json') as f:
-            data = json.load(f)
+def detect_frame(model, frame): 
+    print("detecting frame...")
+          
+    # if not recording:
+    #     with open('status.json') as f:
+    #         data = json.load(f)
         
-        if data['confirmed'] == True:
-            record_q.put("active event confirmed: recording started")
-            recording = True
+    #     if data['confirmed'] == True:
+    #         record_q.put("active event confirmed: recording started")
             
-        
     image_data = cv2.resize(frame, (608, 608))
     image_data = image_data / 255.
     image_data = image_data[np.newaxis, ...].astype(np.float32)
@@ -140,11 +140,12 @@ def detect_frame(model, notify_q, record_q, frame):
         original_h, original_w, _ = frame.shape
         bboxes = utils.format_boxes(boxes.numpy()[0][:valid_detections], original_h, original_w)
 
-        notify_q.put(bboxes)
+        # notify_q.put(bboxes)
         
         pred_bbox = [bboxes, scores.numpy()[0], classes.numpy()[0], valid_detections]
         
-        frame = utils.draw_bbox(frame, pred_bbox, info=False)
+        frame = utils.draw_bbox(frame, pred_bbox, info=True)
+            
     return frame
 
 if __name__ == "__main__":        

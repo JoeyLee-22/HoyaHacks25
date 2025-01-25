@@ -2,82 +2,66 @@ import streamlit as st
 import cv2
 import numpy as np
 import tensorflow as tf
-from detect import detect_frame, detect, notify, record
-import multiprocessing
 import json
+import av
+from detect import detect_frame
+from streamlit_webrtc import webrtc_streamer
+
+if 'model' not in st.session_state:
+    print("loading model...")
+    st.session_state.model = tf.saved_model.load('detectionmodel')
+    print("model loaded")
 
 st.title("Watcher of Weapons")
 
 option = st.sidebar.selectbox(
     "Footage options",
-    ("Upload file", "Webcam", "RTSP")
+    ("Webcam", "Upload file", "RTSP")
 )
 
-path = 'detectionmodel'
-model = tf.saved_model.load(path)
+# if 'notify_q' not in st.session_state:
+#     st.session_state['notify_q'] = multiprocessing.Queue()
+# if 'record_q' not in st.session_state:
+#     st.session_state['record_q'] = multiprocessing.Queue()
+# if 'notify_p' not in st.session_state:
+#     st.session_state['notify_p'] = multiprocessing.Process(target=notify, args=(st.write(st.session_state.notify_q),))
+# if 'record_p' not in st.session_state:
+#     st.session_state['record_p'] = multiprocessing.Process(target=record, args=(st.write(st.session_state.notify_q),))    
+# if 'started' not in st.session_state:
+#     st.session_state['started'] = False
+    
+# if not st.session_state['started']:  
+#     st.write(st.session_state.notify_p).start()
+#     st.write(st.session_state.record_p).start()
+#     st.session_state['started'] = True
 
 if option == "Upload file":
     uploaded_file = st.file_uploader("Choose a video...", type=["mp4", "mpeg"])
     if uploaded_file:
-        dic = {'detected': False,
-           'confirmed': False}
-        json_obj = json.dumps(dic, indent=4)
-        with open('status.json', 'w') as f:
-            f.write(json_obj)
-        
-        notify_q = multiprocessing.Queue()
-        record_q = multiprocessing.Queue()
-        
-        notify_p = multiprocessing.Process(target=notify, args=(notify_q,))
-        notify_p.start()
-        
-        record_p = multiprocessing.Process(target=record, args=(record_q,))
-        record_p.start()
-        
-        detect(notify_q, record_q)
-        
-        notify_q.close()
-        record_q.close()
-        
-        notify_q.join_thread()
-        record_q.join_thread()
-        
-        notify_p.join()
-        record_p.join()
-
+        pass
+            
+def video_frame_callback(frame):
+    print("callback")
+    img = frame.to_ndarray()
+    img = detect_frame(st.session_state.model, img)
+     
+    return av.VideoFrame.from_ndarray(img) 
+                
 if option == "Webcam":
-    # webrtc_streamer(key="stream")
-    img_file_buffer = st.camera_input("Camera feed")
-    if img_file_buffer is not None:
-        # To read image file buffer with OpenCV:
-        bytes_data = img_file_buffer.getvalue()
-        cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
-
-        dic = {'detected': False,
+    webrtc_streamer(key="sample", video_frame_callback=video_frame_callback)
+        
+if __name__ == "__main__":    
+    dic = {'detected': False,
            'confirmed': False}
-        json_obj = json.dumps(dic, indent=4)
-        with open('status.json', 'w') as f:
-            f.write(json_obj)
+    json_obj = json.dumps(dic, indent=4)
+    with open('status.json', 'w') as f:
+        f.write(json_obj)
         
-        notify_q = multiprocessing.Queue()
-        record_q = multiprocessing.Queue()
-        
-        notify_p = multiprocessing.Process(target=notify, args=(notify_q,))
-        notify_p.start()
-        
-        record_p = multiprocessing.Process(target=record, args=(record_q,))
-        record_p.start()
-        
-        annotated_frame = detect_frame(model, cv2_img, notify_q, record_q)
-        st.image(annotated_frame)
-        
-        notify_q.close()
-        record_q.close()
-        
-        notify_q.join_thread()
-        record_q.join_thread()
-        
-        notify_p.join()
-        record_p.join()
-        # Display the resized image
-        
+    # notify_q.close()
+    # record_q.close()
+    
+    # notify_q.join_thread()
+    # record_q.join_thread()
+    
+    # notify_p.join()
+    # record_p.join()
