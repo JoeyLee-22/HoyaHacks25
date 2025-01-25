@@ -1,0 +1,24 @@
+{
+    "id": "chat-79e0486e9cfe4c5da19ec38f327a3289",
+    "object": "chat.completion",
+    "created": 1737833217,
+    "model": "nvidia/vila",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "The scene shows a man in a gray sweatshirt and gray sweatpants, holding a black gun in his right hand. He is standing in a room with a white wall and a white baseboard. The floor is tiled, and there is a gray carpet partially visible in the foreground. The man is aiming the gun at the wall and then moves to the right, still holding the gun."
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": null
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 1590,
+        "total_tokens": 1670,
+        "completion_tokens": 80
+    },
+    "data": null
+}
