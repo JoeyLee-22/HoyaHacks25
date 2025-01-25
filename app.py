@@ -7,10 +7,10 @@ import av
 from detect import detect_frame
 from streamlit_webrtc import webrtc_streamer
 
-if 'model' not in st.session_state:
-    print("loading model...")
-    st.session_state.model = tf.saved_model.load('detectionmodel')
-    print("model loaded")
+# if 'model' not in st.session_state:
+#     print("loading model...")
+#     st.session_state.model = tf.saved_model.load('detectionmodel')
+#     print("model loaded")
 
 st.title("Watcher of Weapons")
 
@@ -43,7 +43,7 @@ if option == "Upload file":
 def video_frame_callback(frame):
     print("callback")
     img = frame.to_ndarray()
-    img = detect_frame(st.session_state.model, img)
+    img = detect_frame(tf.saved_model.load('detectionmodel'), img)
      
     return av.VideoFrame.from_ndarray(img) 
                 
