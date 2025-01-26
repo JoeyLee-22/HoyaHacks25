@@ -35,7 +35,8 @@ def record(q):
                 print(key)
 
 def detect(notify_q, record_q):
-    cap = cv2.VideoCapture("videos/rifle2.MOV")
+    # cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture("videos/guns.mp4")
     
     print("loading model...")
     path = 'detectionmodel'
